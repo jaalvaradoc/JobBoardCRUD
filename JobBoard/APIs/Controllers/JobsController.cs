@@ -79,7 +79,7 @@ namespace APIs.Controllers
             {
                 return BadRequest(ModelState);
             }
-
+            job.CreatedAt = DateTime.Now;
             db.Jobs.Add(job);
             db.SaveChanges();
 
