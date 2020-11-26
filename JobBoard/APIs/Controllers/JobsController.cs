@@ -1,32 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
-using System.Linq;
+﻿using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Web.Http;
 using System.Web.Http.Description;
 using APIs.Models;
+using APIs.Repositories;
 
 namespace APIs.Controllers
 {
     public class JobsController : ApiController
     {
-        private JobBoardContext db = new JobBoardContext();
+        //private JobBoardContext db = new JobBoardContext();
+
+        private readonly JobsRepository jobs = new JobsRepository();
 
         // GET: api/Jobs
         public IQueryable<Job> GetJobs()
         {
-            return db.Jobs;
+            return jobs.Get();
         }
 
         // GET: api/Jobs/5
         [ResponseType(typeof(Job))]
         public IHttpActionResult GetJob(long id)
         {
-            Job job = db.Jobs.Find(id);
+            Job job = jobs.Get(id);
             if (job == null)
             {
                 return NotFound();
@@ -49,23 +46,10 @@ namespace APIs.Controllers
                 return BadRequest();
             }
 
-            db.Entry(job).State = EntityState.Modified;
-            db.Entry(job).Property("CreatedAt").IsModified = false;
 
-            try
+            if (!jobs.Put(job, id))
             {
-                db.SaveChanges();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!JobExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return NotFound();
             }
 
             return StatusCode(HttpStatusCode.NoContent);
@@ -79,41 +63,25 @@ namespace APIs.Controllers
             {
                 return BadRequest(ModelState);
             }
-            job.CreatedAt = DateTime.Now;
-            db.Jobs.Add(job);
-            db.SaveChanges();
+            var job2 = jobs.Post(job);
 
-            return CreatedAtRoute("DefaultApi", new { id = job.Id }, job);
+            return CreatedAtRoute("DefaultApi", new { id = job.Id }, job2);
         }
 
         // DELETE: api/Jobs/5
         [ResponseType(typeof(Job))]
         public IHttpActionResult DeleteJob(long id)
         {
-            Job job = db.Jobs.Find(id);
+            Job job = jobs.Get(id);
             if (job == null)
             {
                 return NotFound();
             }
-
-            db.Jobs.Remove(job);
-            db.SaveChanges();
+            jobs.Delete(id);
 
             return Ok(job);
         }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                db.Dispose();
-            }
-            base.Dispose(disposing);
-        }
-
-        private bool JobExists(long id)
-        {
-            return db.Jobs.Count(e => e.Id == id) > 0;
-        }
+        
+        
     }
 }

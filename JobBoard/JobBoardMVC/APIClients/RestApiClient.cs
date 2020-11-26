@@ -32,11 +32,14 @@ namespace JobBoardMVC.APIClients
         public List<T> Get()
         {
             List<T> data = new List<T>();
-            RestClient client = new RestClient(BaseUrl + ResourceName + "/{id}");
+            RestClient client = new RestClient(BaseUrl + ResourceName);
             RestRequest request = new RestRequest(Method.GET);
             request.OnBeforeDeserialization = resp => { resp.ContentType = "application/json"; };
             IRestResponse<List<T>> response = client.Execute<List<T>>(request);
-            data = response.Data;
+            if (response.IsSuccessful)
+            {
+                data = response.Data;
+            }
             return data;
         }
 
